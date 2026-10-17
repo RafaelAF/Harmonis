@@ -7,6 +7,7 @@ import { TunerScreen } from '@/components/Tuner/TunerScreen';
 import { DetailedHarmonicField } from '@/components/HarmonicField/DetailedHarmonicField';
 import { MetronomeScreen } from '@/components/Metronome/MetronomeScreen';
 import { VocalToneScreen } from '@/components/VocalTone/VocalToneScreen';
+import { YouTubePlayerScreen } from '@/components/YouTube/YouTubePlayerScreen';
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('tuner');
@@ -25,6 +26,7 @@ export default function HomePage() {
         {activeTab === 'harmonic' && <DetailedHarmonicField />}
         {activeTab === 'metronome' && <MetronomeScreen />}
         {activeTab === 'vocal' && <VocalToneScreen />}
+        {activeTab === 'youtube' && <YouTubePlayerScreen />}
       </main>
 
       {/* Rodapé Stateless */}

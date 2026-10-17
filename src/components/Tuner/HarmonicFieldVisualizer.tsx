@@ -12,7 +12,7 @@ import {
   generateHarmonicField,
   mapNoteToHarmonicField,
 } from '@/lib/musicTheory';
-import { Volume2 } from 'lucide-react';
+import { Volume2, Snowflake } from 'lucide-react';
 import { playChordArpeggio } from '@/lib/audioSynth';
 import { useAudioContext } from '@/hooks/useAudioContext';
 
@@ -23,6 +23,7 @@ interface HarmonicFieldVisualizerProps {
   onTonicChange: (tonic: NoteName) => void;
   onModeChange: (mode: ScaleMode) => void;
   a4Ref: number;
+  isFrozen?: boolean;
 }
 
 export function HarmonicFieldVisualizer({
@@ -32,6 +33,7 @@ export function HarmonicFieldVisualizer({
   onTonicChange,
   onModeChange,
   a4Ref,
+  isFrozen = false,
 }: HarmonicFieldVisualizerProps) {
   const { resumeContext } = useAudioContext();
 
@@ -75,9 +77,16 @@ export function HarmonicFieldVisualizer({
             <h2 className="text-lg font-bold text-white tracking-tight">
               Campo Harmônico Reativo
             </h2>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-              Integrado ao Afinador
-            </span>
+            {isFrozen ? (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center gap-1">
+                <Snowflake className="w-3 h-3" />
+                Congelado
+              </span>
+            ) : (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                Integrado ao Afinador
+              </span>
+            )}
           </div>
           <p className="text-xs text-zinc-400 mt-1">
             As notas cantadas ou tocadas destacam instantaneamente seu respectivo grau e acordes.

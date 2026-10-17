@@ -19,6 +19,13 @@ export interface UseTunerReturn {
   error: string | null;
   startListening: () => Promise<void>;
   stopListening: () => void;
+  // Freeze Mode
+  isFrozen: boolean;
+  frozenResult: PitchDetectionResult | null;
+  frozenCentsOffset: number; // desvio manual em cents aplicado sobre a nota congelada
+  freeze: () => void;
+  unfreeze: () => void;
+  adjustFrozenCents: (deltaCents: number) => void;
 }
 
 export function useTuner(options: UseTunerOptions = {}): UseTunerReturn {
@@ -29,6 +36,12 @@ export function useTuner(options: UseTunerOptions = {}): UseTunerReturn {
   const [volume, setVolume] = useState(0);
   const [a4Ref, setA4Ref] = useState(initialA4Ref);
   const [error, setError] = useState<string | null>(null);
+
+  // Freeze Mode
+  const [isFrozen, setIsFrozen] = useState(false);
+  const [frozenResult, setFrozenResult] = useState<PitchDetectionResult | null>(null);
+  const [frozenCentsOffset, setFrozenCentsOffset] = useState(0);
+  const lastResultRef = useRef<PitchDetectionResult | null>(null);
 
   const { resumeContext } = useAudioContext();
 
@@ -131,11 +144,13 @@ export function useTuner(options: UseTunerOptions = {}): UseTunerReturn {
             lastDetectedNoteRef.current = detected.scientificNotation;
           }
 
-          setPitchResult({
+          const result: PitchDetectionResult = {
             ...detected,
             cents: Math.round(smoothedCentsRef.current),
             inTune: Math.abs(Math.round(smoothedCentsRef.current)) <= 5,
-          });
+          };
+          lastResultRef.current = result;
+          setPitchResult(result);
         } else {
           // Incrementa contador de silêncio para não limpar instantaneamente
           silenceCounterRef.current += 1;
@@ -170,6 +185,70 @@ export function useTuner(options: UseTunerOptions = {}): UseTunerReturn {
     };
   }, [stopListening]);
 
+  // --- Freeze Mode actions ---
+  const freeze = useCallback(() => {
+    const snapshot = lastResultRef.current;
+    if (snapshot) {
+      setFrozenResult(snapshot);
+      setFrozenCentsOffset(0);
+      setIsFrozen(true);
+      // Pausa microfone enquanto congelado
+      if (animationFrameIdRef.current) {
+        cancelAnimationFrame(animationFrameIdRef.current);
+        animationFrameIdRef.current = null;
+      }
+    }
+  }, []);
+
+  const unfreeze = useCallback(() => {
+    setIsFrozen(false);
+    setFrozenResult(null);
+    setFrozenCentsOffset(0);
+    // Reativa loop de análise se ainda estiver ouvindo
+    if (analyserNodeRef.current && timeDataRef.current && audioContextRef.current) {
+      const analyzeLoop = () => {
+        if (!analyserNodeRef.current || !timeDataRef.current || !audioContextRef.current) return;
+        analyserNodeRef.current.getFloatTimeDomainData(timeDataRef.current);
+        const detected = detectPitch(timeDataRef.current, {
+          sampleRate: audioContextRef.current.sampleRate,
+          a4Ref: a4RefCurrent.current,
+          minVolume,
+        });
+        if (detected) {
+          silenceCounterRef.current = 0;
+          setVolume(detected.volume);
+          if (lastDetectedNoteRef.current === detected.scientificNotation) {
+            smoothedCentsRef.current = smoothedCentsRef.current * 0.65 + detected.cents * 0.35;
+          } else {
+            smoothedCentsRef.current = detected.cents;
+            lastDetectedNoteRef.current = detected.scientificNotation;
+          }
+          const result: PitchDetectionResult = {
+            ...detected,
+            cents: Math.round(smoothedCentsRef.current),
+            inTune: Math.abs(Math.round(smoothedCentsRef.current)) <= 5,
+          };
+          lastResultRef.current = result;
+          setPitchResult(result);
+        } else {
+          silenceCounterRef.current += 1;
+          setVolume((prev) => Math.max(0, prev * 0.85));
+          if (silenceCounterRef.current > 25) {
+            setPitchResult(null);
+            smoothedCentsRef.current = 0;
+            lastDetectedNoteRef.current = null;
+          }
+        }
+        animationFrameIdRef.current = requestAnimationFrame(analyzeLoop);
+      };
+      animationFrameIdRef.current = requestAnimationFrame(analyzeLoop);
+    }
+  }, [minVolume]);
+
+  const adjustFrozenCents = useCallback((deltaCents: number) => {
+    setFrozenCentsOffset((prev) => Math.max(-50, Math.min(50, prev + deltaCents)));
+  }, []);
+
   return {
     isListening,
     pitchResult,
@@ -179,5 +258,11 @@ export function useTuner(options: UseTunerOptions = {}): UseTunerReturn {
     error,
     startListening,
     stopListening,
+    isFrozen,
+    frozenResult,
+    frozenCentsOffset,
+    freeze,
+    unfreeze,
+    adjustFrozenCents,
   };
 }

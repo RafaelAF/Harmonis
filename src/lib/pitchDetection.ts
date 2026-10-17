@@ -13,7 +13,7 @@ export interface PitchDetectorOptions {
 /**
  * Calcula o RMS (Root Mean Square) do sinal de áudio para medir volume/energia.
  */
-export function calculateRMS(buffer: Float32Array): number {
+export function calculateRMS(buffer: Float32Array<ArrayBuffer>): number {
   let sum = 0;
   for (let i = 0; i < buffer.length; i++) {
     sum += buffer[i] * buffer[i];
@@ -26,7 +26,7 @@ export function calculateRMS(buffer: Float32Array): number {
  * para detecção de frequência fundamental em tempo real.
  */
 export function detectPitch(
-  buffer: Float32Array,
+  buffer: Float32Array<ArrayBuffer>,
   options: PitchDetectorOptions
 ): PitchDetectionResult | null {
   const {

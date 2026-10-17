@@ -72,3 +72,31 @@ export interface VocalClassification {
   rangeLabel: string;
   color: string;
 }
+
+// Tipos do Teste de Extensão Vocal (Vocal Range Finder)
+export interface VocalRangeTestResult {
+  lowestPitch: PitchDetectionResult;
+  highestPitch: PitchDetectionResult;
+  semitonesTotal: number;
+  octavesSpan: number;
+  semitonesRemainder: number;
+  classifications: VocalClassification[];
+  comfortableCenterNote: {
+    note: NoteName;
+    octave: number;
+    scientificNotation: string;
+    frequency: number;
+  };
+  suggestedKeys: Array<{ tonic: NoteName; mode: ScaleMode; label: string }>;
+}
+
+// Tipos da Prática com YouTube
+export interface YouTubeSongPreset {
+  id: string;
+  title: string;
+  artist: string;
+  youtubeId: string;
+  defaultBpm: number;
+  key: NoteName;
+  mode: ScaleMode;
+}

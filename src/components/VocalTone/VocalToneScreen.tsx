@@ -16,9 +16,12 @@ import {
   AudioWaveform as WaveformIcon,
   Sparkles,
   Music,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { playChordArpeggio } from '@/lib/audioSynth';
 import { useAudioContext } from '@/hooks/useAudioContext';
+import { VocalRangeFinder } from './VocalRangeFinder';
 
 const OCTAVES = [2, 3, 4, 5, 6];
 
@@ -46,6 +49,7 @@ export function VocalToneScreen() {
   });
 
   const [selectedMode, setSelectedMode] = useState<ScaleMode>('major');
+  const [showRangeFinder, setShowRangeFinder] = useState(false);
   const { resumeContext } = useAudioContext();
 
   // Campo harmônico integrado na tonalidade selecionada
@@ -348,6 +352,34 @@ export function VocalToneScreen() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* 3. Descoberta de Tessitura Vocal */}
+      <div className="bg-zinc-900/60 rounded-2xl border border-zinc-800 backdrop-blur-sm shadow-xl overflow-hidden">
+        <button
+          onClick={() => setShowRangeFinder((v) => !v)}
+          className="w-full flex items-center justify-between px-6 sm:px-8 py-5 hover:bg-zinc-900/40 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-rose-500 flex items-center justify-center">
+              <Music className="w-4 h-4 text-zinc-950" />
+            </div>
+            <div className="text-left">
+              <div className="text-sm font-bold text-white">Descoberta de Tessitura Vocal</div>
+              <div className="text-xs text-zinc-400">Guia passo a passo para identificar sua extensão vocal</div>
+            </div>
+          </div>
+          {showRangeFinder ? (
+            <ChevronUp className="w-4 h-4 text-zinc-500" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-zinc-500" />
+          )}
+        </button>
+        {showRangeFinder && (
+          <div className="px-6 sm:px-8 pb-6">
+            <VocalRangeFinder />
+          </div>
+        )}
       </div>
     </div>
   );

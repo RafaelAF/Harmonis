@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Mic, Grid3X3, Timer, Volume2 } from 'lucide-react';
+import { Mic, Grid3X3, Timer, Volume2, Video } from 'lucide-react';
 
-export type TabKey = 'tuner' | 'harmonic' | 'metronome' | 'vocal';
+export type TabKey = 'tuner' | 'harmonic' | 'metronome' | 'vocal' | 'youtube';
 
 interface NavigationTabsProps {
   activeTab: TabKey;
@@ -36,6 +36,12 @@ export function NavigationTabs({ activeTab, onTabChange }: NavigationTabsProps) 
       icon: Volume2,
       badge: null,
     },
+    {
+      id: 'youtube' as TabKey,
+      label: 'Praticar com YouTube',
+      icon: Video,
+      badge: 'Novo',
+    },
   ];
 
   return (
@@ -58,7 +64,7 @@ export function NavigationTabs({ activeTab, onTabChange }: NavigationTabsProps) 
               >
                 <Icon
                   className={`w-4 h-4 ${
-                    isActive ? 'text-emerald-400' : 'text-zinc-500'
+                    isActive ? (tab.id === 'youtube' ? 'text-rose-400' : 'text-emerald-400') : 'text-zinc-500'
                   }`}
                 />
                 <span>{tab.label}</span>
@@ -67,6 +73,8 @@ export function NavigationTabs({ activeTab, onTabChange }: NavigationTabsProps) 
                     className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                       tab.badge === 'Ativo'
                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                        : tab.badge === 'Novo'
+                        ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
                         : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
                     }`}
                   >

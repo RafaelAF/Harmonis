@@ -6,6 +6,7 @@ import {
   HarmonicFunction,
   PitchDetectionResult,
   VocalClassification,
+  VocalRangeTestResult,
 } from '@/types/music';
 
 export const NOTES: readonly NoteName[] = [
@@ -494,5 +495,96 @@ export function classifyVocalRange(frequency: number): VocalClassification[] {
       rangeLabel: r.label,
       color: r.color,
     }));
+}
+
+/**
+ * Analisa a extensão vocal completa registrada no teste (Passo 1 e 2)
+ * e gera um diagnóstico completo com semitons, oitavas, classificação e tonalidades ideais.
+ */
+export function calculateVocalRangeDiagnosis(
+  lowest: PitchDetectionResult,
+  highest: PitchDetectionResult
+): VocalRangeTestResult {
+  const getMidi = (pitch: PitchDetectionResult) => {
+    const noteIdx = NOTES.indexOf(pitch.note);
+    return (pitch.octave + 1) * 12 + noteIdx;
+  };
+
+  let midiLow = getMidi(lowest);
+  let midiHigh = getMidi(highest);
+  let actualLowest = lowest;
+  let actualHighest = highest;
+
+  // Garante ordem correta caso o usuário tenha invertido
+  if (midiLow > midiHigh) {
+    const tempMidi = midiLow;
+    midiLow = midiHigh;
+    midiHigh = tempMidi;
+    actualLowest = highest;
+    actualHighest = lowest;
+  }
+
+  const semitonesTotal = Math.max(1, midiHigh - midiLow);
+  const octavesSpan = Math.floor(semitonesTotal / 12);
+  const semitonesRemainder = semitonesTotal % 12;
+
+  // Nota central de conforto (ponto médio da tessitura)
+  const centerMidi = Math.round((midiLow + midiHigh) / 2);
+  const centerNoteIdx = ((centerMidi % 12) + 12) % 12;
+  const centerNote = NOTES[centerNoteIdx];
+  const centerOctave = Math.floor(centerMidi / 12) - 1;
+  const centerFreq = 440 * Math.pow(2, (centerMidi - 69) / 12);
+
+  // Classificação vocal baseada na frequência média e limites
+  const avgFreq = (actualLowest.frequency + actualHighest.frequency) / 2;
+  let classifications = classifyVocalRange(avgFreq);
+  if (classifications.length === 0) {
+    classifications = classifyVocalRange(actualLowest.frequency).concat(
+      classifyVocalRange(actualHighest.frequency)
+    );
+  }
+
+  // Deduplicação de classificações se houver
+  const seen = new Set<string>();
+  classifications = classifications.filter((c) => {
+    if (seen.has(c.voiceType)) return false;
+    seen.add(c.voiceType);
+    return true;
+  });
+
+  // Tonalidades sugeridas em torno da nota de conforto
+  const suggestedKeys: Array<{ tonic: NoteName; mode: ScaleMode; label: string }> = [
+    {
+      tonic: centerNote,
+      mode: 'major',
+      label: `${centerNote} Maior (Tônica na nota central de conforto)`,
+    },
+    {
+      tonic: centerNote,
+      mode: 'natural_minor',
+      label: `${centerNote} Menor (Para canções intimistas/melancólicas)`,
+    },
+    {
+      tonic: NOTES[(centerNoteIdx + 5) % 12],
+      mode: 'major',
+      label: `${NOTES[(centerNoteIdx + 5) % 12]} Maior (Nota central atua como 5ª dominante)`,
+    },
+  ];
+
+  return {
+    lowestPitch: actualLowest,
+    highestPitch: actualHighest,
+    semitonesTotal,
+    octavesSpan,
+    semitonesRemainder,
+    classifications,
+    comfortableCenterNote: {
+      note: centerNote,
+      octave: centerOctave,
+      scientificNotation: `${centerNote}${centerOctave}`,
+      frequency: Math.round(centerFreq * 10) / 10,
+    },
+    suggestedKeys,
+  };
 }
 
